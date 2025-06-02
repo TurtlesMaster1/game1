@@ -2,7 +2,7 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
-import imp_wor
+import o_w
 
 def load_texture(path):
     texture_surface = pygame.image.load(path)

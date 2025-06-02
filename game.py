@@ -4,7 +4,7 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import math
-import imp_wor
+import o_w
 import os
 from Objects import tri
 
@@ -17,7 +17,7 @@ speed = 0.1
 
 loadingworld = input('Import World Name:')
 
-wdata = imp_wor.extmeta(loadingworld)
+wdata = o_w.extmeta(loadingworld)
 
 print(wdata)
 

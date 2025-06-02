@@ -32,7 +32,7 @@ def getalldata(world_name):
     with open(world_name + '.txt', 'r') as f:
         lines = f.read().splitlines()
     world_data = []
-    for x in range(len(lines)-12):
+    for x in range(len(lines)-lines[2]):
         world_data.append(lines[12+x])
     return world_data
 
