@@ -1,0 +1,13 @@
+First World
+12
+a
+a
+Version 1
+!@#
+Date: 5/26/25
+Author: Unknown
+Notes: This is a test world metadata file.
+!@#
+
+tri 
+['default.jpg','1,0,0'',0,1,0','0,0,1']
