@@ -10,6 +10,7 @@ def extmeta(world_name):
 
     # Extract world name and version
     world_meta.append(lines[0])  # World name
+    world_meta.append(lines[1])  # World Data start index
     world_meta.append(lines[4])  # Version or similar
 
     # Parse additional data between '!@#' markers
@@ -32,8 +33,8 @@ def getalldata(world_name):
     with open(world_name + '.txt', 'r') as f:
         lines = f.read().splitlines()
     world_data = []
-    for x in range(len(lines)-lines[2]):
-        world_data.append(lines[12+x])
+    for x in range(len(lines)-int(o_w.extmeta(world_name)[1])):
+        world_data.append(lines[int(o_w.extmeta(world_name)[1])+x]) # type: ignore
     return world_data
 
 
