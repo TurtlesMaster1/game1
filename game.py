@@ -7,9 +7,11 @@ import math
 import o_w
 import os
 from Objects import tri
+import render_world
+import math 
 
 # Camera state
-camera_pos = [0.0, 0.0, 7.0]  # Start farther back so we can see the triangle
+camera_pos = [0.0, 0.0, 7.0]  
 yaw = -90.0
 pitch = 0.0
 sensitivity = 0.2
@@ -20,6 +22,7 @@ loadingworld = input('Import World Name:')
 wdata = o_w.extmeta(loadingworld)
 
 print(wdata)
+print(o_w.getalldata(loadingworld))
 
 
 def get_camera_front():
@@ -42,6 +45,7 @@ def load_texture(path):
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data)
     return tex_id
 
+
 def draw_scene():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -52,7 +56,34 @@ def draw_scene():
     target = [camera_pos[i] + front[i] for i in range(3)]
     gluLookAt(*camera_pos, *target, 0.0, 1.0, 0.0)
 
-    tri.render()
+    render_world.render_world(  o_w.getalldata  (loadingworld,chunk = [math.floor(camera_pos[0]/16),math.floor(camera_pos[2]/16)]))
+
+def handle_keyboard():
+    print(get_camera_front()) 
+    global camera_pos
+    keys = pygame.key.get_pressed()
+
+    front = get_camera_front()
+    front_flat = [front[0], 0.0, front[2]]  # zero out vertical (y) movement
+    length = math.sqrt(front_flat[0]**2 + front_flat[2]**2)
+    front_flat = [f / length for f in front_flat]  # normalize
+
+    right = [front_flat[2], 0, -front_flat[0]]  # perpendicular
+    up = [0.0, 1.0, 0.0]
+
+    if keys[K_w]:
+        camera_pos = [camera_pos[i] + front_flat[i] * speed for i in range(3)]
+    if keys[K_s]:
+        camera_pos = [camera_pos[i] - front_flat[i] * speed for i in range(3)]
+    if keys[K_a]:
+        camera_pos = [camera_pos[i] + right[i] * speed for i in range(3)]
+        
+    if keys[K_d]:
+        camera_pos = [camera_pos[i] - right[i] * speed for i in range(3)]
+    if keys[K_SPACE]:
+        camera_pos = [camera_pos[i] + up[i] * speed for i in range(3)]
+    if keys[K_LSHIFT]:
+        camera_pos = [camera_pos[i] - up[i] * speed for i in range(3)]
 
 def main():
     global yaw, pitch, camera_pos, texture_id
@@ -72,14 +103,20 @@ def main():
     glLoadIdentity()
 
     glEnable(GL_DEPTH_TEST)
+    glEnable(GL_TEXTURE_2D)
     glClearColor(0.1, 0.1, 0.1, 1.0)
 
-    texture_id = load_texture('Textures/default.jpg')  # Load texture once
+    texture_id = load_texture('Textures/default.jpg')
 
     clock = pygame.time.Clock()
 
     while True:
         dt = clock.tick(60)
+
+        handle_keyboard()
+
+        draw_scene()  # <-- draws every frame
+        pygame.display.flip()  # <-- updates screen
 
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -92,38 +129,7 @@ def main():
                 xrel, yrel = event.rel
                 yaw += xrel * sensitivity
                 pitch -= yrel * sensitivity
-                pitch = max(-89.0, min(89.0, pitch))
 
-        keys = pygame.key.get_pressed()
-        front = get_camera_front()
-        right = [
-            math.sin(math.radians(yaw - 90)),
-            0,
-            math.cos(math.radians(yaw - 90))
-        ]
-
-        # Horizontal plane movement
-        flat_front = [front[0], 0, front[2]]
-        length = math.sqrt(flat_front[0]**2 + flat_front[2]**2)
-        flat_front = [f / length for f in flat_front]
-
-        if keys[K_w]:
-            camera_pos[0] += flat_front[0] * speed
-            camera_pos[2] += flat_front[2] * speed
-        if keys[K_s]:
-            camera_pos[0] -= flat_front[0] * speed
-            camera_pos[2] -= flat_front[2] * speed
-        if keys[K_a]:
-            camera_pos = [camera_pos[i] - right[i] * speed for i in range(3)]
-        if keys[K_d]:
-            camera_pos = [camera_pos[i] + right[i] * speed for i in range(3)]
-        if keys[K_SPACE]:
-            camera_pos[1] += speed
-        if keys[K_LSHIFT]:
-            camera_pos[1] -= speed
-
-        draw_scene()
-        pygame.display.flip()
 
 if __name__ == "__main__":
     main()

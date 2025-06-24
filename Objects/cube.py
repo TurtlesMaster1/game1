@@ -32,16 +32,18 @@ def render(params):
             glBindTexture(GL_TEXTURE_2D, texture_id)
 
             glBegin(GL_TRIANGLES)
-            glTexCoord2f(0.5, 1.0)
+            glTexCoord2f(0.0, 1.0)
             glVertex3f(*parse_vertex(params[1]))
             glTexCoord2f(0.0, 0.0)
             glVertex3f(*parse_vertex(params[2]))
             glTexCoord2f(1.0, 0.0)
             glVertex3f(*parse_vertex(params[3]))
+            glTexCoord2f(1.0, 1.0)
+            glVertex3f(*parse_vertex(params[4]))
             glEnd()
 
             glDisable(GL_TEXTURE_2D)
-            print("[RENDER] Textured triangle rendered.")
+            print("[RENDER] Textured cube rendered.")
         except Exception as e:
             print(f"[ERROR] Texture render failed: {e}")
     else:
