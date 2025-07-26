@@ -4,24 +4,27 @@ class TreeNode(object):
         self.val = val
         self.left = left
         self.right = right
-class Solution(object):
+
     
     
-    def worker(root, total):
+def worker(root, total):
         
-        total = total + 1
+    total = total + 1
 
-        if not root.left == None and root.right == None:
+    if not root.left == None and root.right == None:
 
-            self.worker(root.right,total)
-            self.worker(root.left,total)
-        array.append(total)
+        worker(root.right,total)
+        worker(root.left,total)
+    array.append(total)
 
-    def maxDepth(self,root):
-        array = []
+def maxDepth(root):
+    
+    array = []
         
-        worker(root, 1)
+    worker(root, 1)
 
-        array = array.sort
+    array = array.sort
 
-        return array[len(array) - 1]
+    return array[len(array) - 1]
+
+maxDepth([3,9,20,None,None,15,7])

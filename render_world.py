@@ -1,4 +1,5 @@
 from Objects import tri
+from Objects import cube
 import ast
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -6,31 +7,25 @@ from OpenGL.GLU import *
 def draw_debug_triangle():
     glColor3f(1.0, 0.0, 0.0)  # Bright red
     glBegin(GL_TRIANGLES)
-    glVertex2f(-0.9, -0.9)  # bottom-left
-    glVertex2f(-0.7, -0.9)  # bottom-middle
-    glVertex2f(-0.8, -0.7)  # middle-left
+    glVertex3f(-0.9, -0.9, 0.0)  # Use 3D coordinates
+    glVertex3f(-0.7, -0.9, 0.0)
+    glVertex3f(-0.8, -0.7, 0.0)
     glEnd()
     glColor3f(1.0, 1.0, 1.0)  # Reset color
 
 def render_world(world_data_lines):
-    parsed = []
-    i = 0
-    while i < len(world_data_lines) - 1:
-        cmd = world_data_lines[i].strip()
-        args_str = world_data_lines[i + 1].strip()
-        try:
-            args = ast.literal_eval(args_str)
-            print(f"[OK] Parsed {cmd}: {args}")
-            parsed.append([cmd, args])
-        except Exception as e:
-            print(f"[ERROR] Parsing failed at line {i}: {e}")
-        i += 2
-
-    for entry in parsed:
-        print(f"[INFO] Dispatching {entry[0]}")
-        if entry[0] == "tri":
-            tri.render(entry[1])
-        else:
-            print(f"[WARN] Unknown command: {entry[0]}")
-
+    rendered_count = 0
+    
+    for line in range(0, len(world_data_lines), 2):
+        if line + 1 < len(world_data_lines) and world_data_lines[line] == "tri":
+            try:
+                # Parse the parameters string into a list
+                params = ast.literal_eval(world_data_lines[line + 1])
+                tri.render(params)
+                rendered_count += 1
+            except Exception as e:
+                pass
     draw_debug_triangle()
+
+
+        

@@ -27,7 +27,6 @@ def render(params):
         try:
             glEnable(GL_TEXTURE_2D)
             texture_path = 'Textures/' + texture_name
-            print(f"[RENDER] Loading texture: {texture_path}")
             texture_id = load_texture(texture_path)
             glBindTexture(GL_TEXTURE_2D, texture_id)
 
@@ -41,9 +40,8 @@ def render(params):
             glEnd()
 
             glDisable(GL_TEXTURE_2D)
-            print("[RENDER] Textured triangle rendered.")
         except Exception as e:
-            print(f"[ERROR] Texture render failed: {e}")
+            pass
     else:
         # Use random color
         r, g, b = random.random(), random.random(), random.random()
@@ -56,4 +54,3 @@ def render(params):
         glEnd()
 
         glColor3f(1.0, 1.0, 1.0)
-        print("[RENDER] Colored triangle rendered.")

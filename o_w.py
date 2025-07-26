@@ -29,11 +29,7 @@ def extmeta(world_name):
 
     return world_meta
 
-def getchunk(world_name,chunk):
-    with open('Saves/' + world_name + '/' + chunk, 'r') as f:
+def getchunk(world_name, chunk):
+    with open('Saves/' + world_name + '/' + str(chunk), 'r') as f:
         lines = f.read().splitlines()
-    world_data = []
-
-    for x in range(len(lines)-int(extmeta(world_name)[1])):
-        world_data.append( lines[int (extmeta(world_name)[1] )+x] ) # type: ignore
-    return world_data
+    return lines
