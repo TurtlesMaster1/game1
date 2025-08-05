@@ -29,10 +29,10 @@ def manual_send(message):
         # Decode and print the response
         response = data.decode('utf-8')
         
-        return f"Received from server: {response}"
+        return response
 
 def send(message):
-      manual_send(message=message)
+      return manual_send(message=message)
 
       
     

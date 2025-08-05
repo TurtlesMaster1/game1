@@ -23,9 +23,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             
             # Decode the data and print it
             message = data.decode('utf-8')
-            while True:
-                print(f"Received from client: {message}")
+            
+            print(f"Received from client: {message}")
 
             # Send a response back to the client
-                response = f"Echo: {message}".encode('utf-8')
-                conn.sendall(response)
+            response = f"Echo: {message}".encode('utf-8')
+            conn.sendall(response)
+        input("Press Enter to exit...")
+

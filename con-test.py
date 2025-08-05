@@ -1,4 +1,5 @@
 import servertest.client as net
 
-net.send('hello!')
+print(net.send('hello!'))
+
 
