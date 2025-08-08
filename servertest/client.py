@@ -34,6 +34,11 @@ def manual_send(message):
 def send(message):
       return manual_send(message=message)
 
+
+
+def create_job(type, headers,body):
+      send([type, headers,body])
+
       
     
 

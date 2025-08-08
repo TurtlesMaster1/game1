@@ -13,6 +13,7 @@ from OpenGL.GL import glGetString, GL_RENDERER, GL_VENDOR, GL_VERSION
 import numpy as np
 
 
+
 # Camera state
 camera_pos = [0.0, 260, 7.0]  # Move camera to Y=260 to see the world
 yaw = -90.0
@@ -34,6 +35,8 @@ def getcurrentchunk(worldname):
         return chunk_data
     except Exception as e:
         return []
+    
+
 
 def draw_grid():
     """Draw a reference grid to help visualize movement and positioning"""
