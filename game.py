@@ -11,6 +11,7 @@ import render_world
 import math 
 from OpenGL.GL import glGetString, GL_RENDERER, GL_VENDOR, GL_VERSION
 import numpy as np
+from performance_monitor import perf_monitor, timer, start_timer, stop_timer, increment_frame, print_summary
 
 
 
@@ -29,60 +30,17 @@ print(wdata)
 
 
 def getcurrentchunk(worldname):
-    chunk_coords = [abs(math.floor(camera_pos[0]/16)), abs(math.floor(camera_pos[2]/16))]
-    try:
-        chunk_data = o_w.getchunk(loadingworld, chunk_coords)
-        return chunk_data
-    except Exception as e:
-        return []
+    with timer("chunk_loading"):
+        chunk_coords = [abs(math.floor(camera_pos[0]/16)), abs(math.floor(camera_pos[2]/16))]
+        try:
+            chunk_data = o_w.getchunk(loadingworld, chunk_coords)
+            return chunk_data
+        except Exception as e:
+            return []
     
 
 
-def draw_grid():
-    """Draw a reference grid to help visualize movement and positioning"""
-    glDisable(GL_TEXTURE_2D)  # Disable texturing for grid
-    glColor3f(0.5, 0.5, 0.5)  # Gray color for grid
-    
-    # Draw grid lines
-    glBegin(GL_LINES)
-    
-    # Draw lines along X axis (red)
-    glColor3f(1.0, 0.0, 0.0)
-    for i in range(-10, 11):
-        glVertex3f(i * 10, 0, -100)
-        glVertex3f(i * 10, 0, 100)
-    
-    # Draw lines along Z axis (blue)
-    glColor3f(0.0, 0.0, 1.0)
-    for i in range(-10, 11):
-        glVertex3f(-100, 0, i * 10)
-        glVertex3f(100, 0, i * 10)
-    
-    # Draw lines along Y axis (green) - vertical lines
-    glColor3f(0.0, 1.0, 0.0)
-    for i in range(-10, 11):
-        glVertex3f(i * 10, 0, 0)
-        glVertex3f(i * 10, 100, 0)
-    
-    glEnd()
-    
-    # Draw coordinate axes
-    glBegin(GL_LINES)
-    # X axis (red)
-    glColor3f(1.0, 0.0, 0.0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(50, 0, 0)
-    
-    # Y axis (green)
-    glColor3f(0.0, 1.0, 0.0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(0, 50, 0)
-    
-    # Z axis (blue)
-    glColor3f(0.0, 0.0, 1.0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(0, 0, 50)
-    glEnd()
+
     
     glColor3f(1.0, 1.0, 1.0)  # Reset color
     glEnable(GL_TEXTURE_2D)  # Re-enable texturing
@@ -109,52 +67,146 @@ def load_texture(path):
 
 
 def draw_scene():
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    with timer("frame_render"):
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
 
-    front = get_camera_front()
-    target = [camera_pos[i] + front[i] for i in range(3)]
-    gluLookAt(*camera_pos, *target, 0.0, 1.0, 0.0)
+        front = get_camera_front()
+        target = [camera_pos[i] + front[i] for i in range(3)]
+        gluLookAt(*camera_pos, *target, 0.0, 1.0, 0.0)
 
-    # Draw grid first (behind everything)
-    draw_grid()
-    
-    # Try to render world data
-    try:
-        world_data = getcurrentchunk(loadingworld)
-        if world_data:
-            render_world.render_world(world_data)
-    except Exception as e:
-        pass
+        # Try to render world data
+        try:
+            world_data = getcurrentchunk(loadingworld)
+            if world_data:
+                with timer("world_rendering"):
+                    render_world.render_world(world_data)
+        except Exception as e:
+            pass
 
 def handle_keyboard():
+    with timer("input_handling"):
+        global camera_pos
+        keys = pygame.key.get_pressed()
+
+        front = get_camera_front()
+        front_flat = [front[0], 0.0, front[2]]  # zero out vertical (y) movement
+        length = math.sqrt(front_flat[0]**2 + front_flat[2]**2)
+        front_flat = [f / length for f in front_flat]  # normalize
+
+        right = [front_flat[2], 0, -front_flat[0]]  # perpendicular
+        up = [0.0, 1.0, 0.0]
+
+        if keys[K_w]:
+            camera_pos = [camera_pos[i] + front_flat[i] * speed for i in range(3)]
+        if keys[K_s]:
+            camera_pos = [camera_pos[i] - front_flat[i] * speed for i in range(3)]
+        if keys[K_a]:
+            camera_pos = [camera_pos[i] + right[i] * speed for i in range(3)]
+            
+        if keys[K_d]:
+            camera_pos = [camera_pos[i] - right[i] * speed for i in range(3)]
+        if keys[K_SPACE]:
+            camera_pos = [camera_pos[i] + up[i] * speed for i in range(3)]
+        if keys[K_LSHIFT]:
+            camera_pos = [camera_pos[i] - up[i] * speed for i in range(3)]
+
+def render_performance_display(font, small_font, fps):
+    """Render performance statistics on screen"""
+    # Switch to 2D rendering for text
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    glOrtho(0, 800, 600, 0, -1, 1)
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
     
-    global camera_pos
-    keys = pygame.key.get_pressed()
-
-    front = get_camera_front()
-    front_flat = [front[0], 0.0, front[2]]  # zero out vertical (y) movement
-    length = math.sqrt(front_flat[0]**2 + front_flat[2]**2)
-    front_flat = [f / length for f in front_flat]  # normalize
-
-    right = [front_flat[2], 0, -front_flat[0]]  # perpendicular
-    up = [0.0, 1.0, 0.0]
-
-    if keys[K_w]:
-        camera_pos = [camera_pos[i] + front_flat[i] * speed for i in range(3)]
-    if keys[K_s]:
-        camera_pos = [camera_pos[i] - front_flat[i] * speed for i in range(3)]
-    if keys[K_a]:
-        camera_pos = [camera_pos[i] + right[i] * speed for i in range(3)]
-        
-    if keys[K_d]:
-        camera_pos = [camera_pos[i] - right[i] * speed for i in range(3)]
-    if keys[K_SPACE]:
-        camera_pos = [camera_pos[i] + up[i] * speed for i in range(3)]
-    if keys[K_LSHIFT]:
-        camera_pos = [camera_pos[i] - up[i] * speed for i in range(3)]
+    # Disable depth testing for 2D text
+    glDisable(GL_DEPTH_TEST)
+    glDisable(GL_TEXTURE_2D)
+    
+    # Get performance stats
+    all_stats = perf_monitor.get_all_stats()
+    top_ops = perf_monitor.get_top_operations(5)
+    
+    # Render background box
+    glColor4f(0.0, 0.0, 0.0, 0.7)  # Semi-transparent black
+    glBegin(GL_QUADS)
+    glVertex2f(10, 10)
+    glVertex2f(350, 10)
+    glVertex2f(350, 200)
+    glVertex2f(10, 200)
+    glEnd()
+    
+    # Render text
+    glColor3f(1.0, 1.0, 1.0)  # White text
+    
+    # FPS display
+    fps_text = f"FPS: {int(fps)}"
+    fps_surface = font.render(fps_text, True, (255, 255, 255))
+    fps_texture = pygame.image.tostring(fps_surface, "RGBA", True)
+    
+    glEnable(GL_TEXTURE_2D)
+    tex_id = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, tex_id)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fps_surface.get_width(), fps_surface.get_height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, fps_texture)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    
+    glBegin(GL_QUADS)
+    glTexCoord2f(0, 1)
+    glVertex2f(20, 20)
+    glTexCoord2f(1, 1)
+    glVertex2f(20 + fps_surface.get_width(), 20)
+    glTexCoord2f(1, 0)
+    glVertex2f(20 + fps_surface.get_width(), 20 + fps_surface.get_height())
+    glTexCoord2f(0, 0)
+    glVertex2f(20, 20 + fps_surface.get_height())
+    glEnd()
+    
+    glDeleteTextures([tex_id])
+    glDisable(GL_TEXTURE_2D)
+    
+    # Performance stats
+    y_offset = 50
+    for i, (name, stats) in enumerate(top_ops):
+        if stats and stats['count'] > 0:
+            text = f"{name}: {stats['average']*1000:.1f}ms avg ({stats['count']} calls)"
+            text_surface = small_font.render(text, True, (255, 255, 255))
+            text_texture = pygame.image.tostring(text_surface, "RGBA", True)
+            
+            glEnable(GL_TEXTURE_2D)
+            tex_id = glGenTextures(1)
+            glBindTexture(GL_TEXTURE_2D, tex_id)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, text_surface.get_width(), text_surface.get_height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, text_texture)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+            
+            glBegin(GL_QUADS)
+            glTexCoord2f(0, 1)
+            glVertex2f(20, y_offset)
+            glTexCoord2f(1, 1)
+            glVertex2f(20 + text_surface.get_width(), y_offset)
+            glTexCoord2f(1, 0)
+            glVertex2f(20 + text_surface.get_width(), y_offset + text_surface.get_height())
+            glTexCoord2f(0, 0)
+            glVertex2f(20, y_offset + text_surface.get_height())
+            glEnd()
+            
+            glDeleteTextures([tex_id])
+            glDisable(GL_TEXTURE_2D)
+            
+            y_offset += 25
+    
+    # Restore 3D rendering
+    glEnable(GL_DEPTH_TEST)
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
+    glPopMatrix()
 
 def main():
     global yaw, pitch, camera_pos, texture_id
@@ -188,32 +240,48 @@ def main():
 
     # Initialize font for FPS display
     pygame.font.init()
-    font = pygame.font.SysFont('Arial', 24)
+    font = pygame.font.SysFont('Arial', 16)
+    small_font = pygame.font.SysFont('Arial', 12)
 
+    frame_count = 0
+    last_perf_print = 0
+    
     while True:
-        dt = clock.tick(60)
+        with timer("total_frame"):
+            dt = clock.tick(60)
+            increment_frame()
+            frame_count += 1
 
-        handle_keyboard()
-        draw_scene()
+            handle_keyboard()
+            draw_scene()
 
-        # Print FPS to console instead of rendering on screen
-        fps = clock.get_fps()
-        print(f"FPS: {int(fps)}")
+            # Print FPS and performance stats every 60 frames
+            fps = clock.get_fps()
+            if frame_count % 60 == 0:
+                print(f"FPS: {int(fps)}")
+                # Print performance summary every 300 frames (5 seconds at 60fps)
+                if frame_count % 300 == 0:
+                    print_summary()
+                # Log performance data every 600 frames (10 seconds at 60fps)
+                if frame_count % 600 == 0:
+                    perf_monitor.log_performance()
+            
+            # Render performance display on screen
+            render_performance_display(font, small_font, fps)
 
-        pygame.display.flip()
+            pygame.display.flip()
 
-
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                return
-            elif event.type == KEYDOWN and event.key == K_ESCAPE:
-                pygame.quit()
-                return
-            elif event.type == MOUSEMOTION:
-                xrel, yrel = event.rel
-                yaw += xrel * sensitivity
-                pitch -= yrel * sensitivity
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    return
+                elif event.type == KEYDOWN and event.key == K_ESCAPE:
+                    pygame.quit()
+                    return
+                elif event.type == MOUSEMOTION:
+                    xrel, yrel = event.rel
+                    yaw += xrel * sensitivity
+                    pitch -= yrel * sensitivity
 
 
 if __name__ == "__main__":

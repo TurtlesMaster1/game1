@@ -3,8 +3,10 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import random
+import time
 
 def load_texture(path):
+    start_time = time.perf_counter()
     texture_surface = pygame.image.load(path)
     texture_data = pygame.image.tostring(texture_surface, "RGBA", True)
     width, height = texture_surface.get_rect().size
@@ -15,12 +17,15 @@ def load_texture(path):
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
+    elapsed = time.perf_counter() - start_time
+    print(f"Texture loading '{path}' took {elapsed*1000:.2f}ms")
     return tex_id
 
 def parse_vertex(s):
     return tuple(map(float, s.split(',')))
 
 def render(params):
+    start_time = time.perf_counter()
     texture_name = params[0].strip().lower()
 
     if texture_name != "none":
@@ -54,3 +59,7 @@ def render(params):
         glEnd()
 
         glColor3f(1.0, 1.0, 1.0)
+    
+    elapsed = time.perf_counter() - start_time
+    if elapsed > 0.001:  # Only print if it takes more than 1ms
+        print(f"Triangle render took {elapsed*1000:.2f}ms")

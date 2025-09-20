@@ -1,7 +1,10 @@
+import time
+
 def guide():
     return 'First Value: World Name. Second Value: Version. Additional Data, with its own description, will be returned after'
 
 def extmeta(world_name):
+    start_time = time.perf_counter()
     world_meta = []
 
     # Read file content safely and split lines once
@@ -27,9 +30,14 @@ def extmeta(world_name):
     if current_index >= len(lines) or lines[current_index] != '!@#':
         raise Exception("Missing closing '!@#' marker in world file")
 
+    elapsed = time.perf_counter() - start_time
+    print(f"World metadata loading took {elapsed*1000:.2f}ms")
     return world_meta
 
 def getchunk(world_name, chunk):
+    start_time = time.perf_counter()
     with open('Saves/' + world_name + '/' + str(chunk), 'r') as f:
         lines = f.read().splitlines()
+    elapsed = time.perf_counter() - start_time
+    print(f"Chunk {chunk} loading took {elapsed*1000:.2f}ms")
     return lines
